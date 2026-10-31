@@ -121,3 +121,37 @@ def test_unsafe_discovered_link_is_skipped_without_duplicate_page(monkeypatch):
     result = audit_website("https://example.com", max_pages=3)
     assert len(result.pages) == 1
     assert any("Skipped a same-host link" in note for note in result.notes)
+
+
+def test_rejects_malformed_port():
+    with pytest.raises(UnsafeTarget, match="invalid port"):
+        validate_public_url("https://example.com:not-a-port")
+
+
+def test_same_host_redirect_is_followed_and_external_redirect_is_blocked(monkeypatch):
+    import httpx
+    from revenue_leak_auditor.auditor import _fetch_html
+
+    monkeypatch.setattr("revenue_leak_auditor.auditor.validate_public_url", lambda url: url)
+    seen = []
+
+    def handler(request):
+        seen.append(str(request.url))
+        if request.url.path == "/start":
+            return httpx.Response(302, headers={"Location": "/final"})
+        return httpx.Response(200, headers={"Content-Type": "text/html; charset=utf-8"}, text="<title>Final</title>")
+
+    with httpx.Client(transport=httpx.MockTransport(handler), follow_redirects=False) as client:
+        status, content_type, final_url, html = _fetch_html(client, "https://example.com/start", "example.com")
+    assert status == 200
+    assert "text/html" in content_type
+    assert final_url == "https://example.com/final"
+    assert "Final" in html
+    assert seen == ["https://example.com/start", "https://example.com/final"]
+
+    def external_redirect(_request):
+        return httpx.Response(302, headers={"Location": "https://other.example/"})
+
+    with httpx.Client(transport=httpx.MockTransport(external_redirect), follow_redirects=False) as client:
+        with pytest.raises(UnsafeTarget, match="Cross-host"):
+            _fetch_html(client, "https://example.com/start", "example.com")
