@@ -20,6 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout", type=float, default=10, help="Per-request timeout in seconds (2-30; default: 10)")
     parser.add_argument("--output", default="audit-report.md", help="Markdown report path (default: audit-report.md)")
     parser.add_argument("--json", dest="json_path", help="Optional JSON report path")
+    parser.add_argument("--html", dest="html_path", help="Optional self-contained HTML report path")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return parser
 
@@ -30,7 +31,7 @@ def main() -> None:
     try:
         print(f"Auditing {args.url} (up to {args.max_pages} pages)...")
         result = audit_website(args.url, max_pages=args.max_pages, timeout=args.timeout)
-        write_reports(result, args.output, args.json_path)
+        write_reports(result, args.output, args.json_path, args.html_path)
     except (UnsafeTarget, ValueError) as exc:
         parser.error(str(exc))
     except KeyboardInterrupt:
@@ -42,6 +43,8 @@ def main() -> None:
     print(f"Markdown report: {args.output}")
     if args.json_path:
         print(f"JSON report: {args.json_path}")
+    if args.html_path:
+        print(f"HTML report: {args.html_path}")
 
 
 if __name__ == "__main__":
