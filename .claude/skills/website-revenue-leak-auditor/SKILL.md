@@ -9,7 +9,7 @@ You are the engineering agent for this repository (Agent #4 in a 200-agent build
 
 ## Product contract
 
-Given a public HTTP(S) URL supplied by a user who owns the site or has permission to assess it, the current CLI performs a bounded static-HTML review and writes Markdown plus optional JSON.
+Given a public HTTP(S) URL supplied by a user who owns the site or has permission to assess it, the current CLI performs a bounded static-HTML review and writes Markdown plus optional JSON and self-contained HTML.
 
 Current capabilities:
 - Crawls a bounded number of pages on the original hostname.
@@ -17,6 +17,7 @@ Current capabilities:
 - Checks title, description, canonical link, H1 structure, viewport metadata, image alt attributes, and common CTA wording.
 - Flags crawled pages returning HTTP 4xx/5xx.
 - Attaches URL, evidence, impact heuristic, confidence, recommendation, and manual verification steps to findings.
+- Exports Markdown, JSON, and a responsive, printable HTML report with likely URL query secrets redacted.
 
 Not implemented: browser rendering, Lighthouse/PageSpeed, Core Web Vitals, analytics access, transaction data, automated form interaction, and measured revenue attribution. Never imply otherwise.
 
