@@ -725,11 +725,6 @@ website-revenue-leak-auditor/
 │       └── tests.yml
 │
 ├── docs/
-│   ├── assets/
-│   │   └── panels/
-│   │       ├── hero-character.jpg
-│   │       ├── desk-character.jpg
-│   │       └── ink-eye.jpg
 │   └── SECURITY.md
 │
 ├── examples/
@@ -1151,7 +1146,7 @@ After making a website change, verify the exact issue instead of relying only on
 
 ---
 
-## 10.1 How to add a new deterministic check
+## 9.10 How to add a new deterministic check
 
 A good new check should be small, evidence-based, and easy to test.
 
@@ -1242,7 +1237,7 @@ flowchart LR
     G --> H["Open pull request"]
 ~~~
 
-## 10.2 A useful bug report
+## 9.11 A useful bug report
 
 A high-quality bug report helps another developer reproduce the problem without needing access to your computer.
 
@@ -1277,7 +1272,7 @@ Additional notes:
 No credentials, tokens, private URLs, or customer data included.
 ~~~
 
-## 10.3 Test design principles
+## 9.12 Test design principles
 
 Tests should verify behavior, not simply exercise lines of code.
 
