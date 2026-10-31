@@ -41,17 +41,17 @@ python -m pip install -e ".[dev]"
 revenue-auditor https://example.com
 ```
 
-The command writes `audit-report.md` in the current directory. To also save machine-readable output:
+The command writes `audit-report.md` in the current directory. Add `--json` for machine-readable data or `--html` for a self-contained, responsive, printable client report:
 
 ```bash
-revenue-auditor https://example.com --max-pages 8 --output reports/example-audit.md --json reports/example-audit.json
+revenue-auditor https://example.com --max-pages 8 --output reports/example-audit.md --json reports/example-audit.json --html reports/example-audit.html
 ```
 
 Options:
 
 ```text
 revenue-auditor URL [--max-pages 1..15] [--timeout 2..30]
-                   [--output report.md] [--json report.json]
+                   [--output report.md] [--json report.json] [--html report.html]
 ```
 
 ## Example finding
@@ -136,7 +136,7 @@ See [`docs/SECURITY.md`](docs/SECURITY.md) for the threat model and known limita
 - [x] Python package and installable `revenue-auditor` CLI.
 - [x] Bounded same-host HTML crawl and structured page records.
 - [x] Evidence-backed static SEO, structure, mobile-signal, accessibility-attribute, CTA-heuristic, and HTTP status checks.
-- [x] Markdown and JSON reports.
+- [x] Markdown, JSON, and self-contained HTML reports (with query-secret redaction).
 - [x] Unit tests and GitHub Actions CI.
 - [ ] Browser-rendered checks for JavaScript-heavy sites.
 - [ ] Lighthouse/PageSpeed integration with explicit lab-vs-field labels.
