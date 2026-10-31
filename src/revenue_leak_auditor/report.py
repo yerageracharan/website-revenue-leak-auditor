@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import json
 import re
 from pathlib import Path
@@ -71,7 +72,51 @@ def render_markdown(result: AuditResult) -> str:
     return "\n".join(lines)
 
 
-def write_reports(result: AuditResult, markdown_path: str, json_path: str | None = None) -> None:
+def render_html(result: AuditResult) -> str:
+    """Create a self-contained, shareable HTML report without external assets."""
+    counts = result.summary
+    findings = sorted(result.findings, key=lambda item: (IMPACT_ORDER.get(item.impact, 3), item.category, item.title))
+    cards = []
+    for index, finding in enumerate(findings, 1):
+        impact_class = finding.impact.lower() if finding.impact.lower() in {"high", "medium", "low"} else "low"
+        cards.append(f"""<article class="finding">
+  <div class="finding-top"><span class="pill {impact_class}">{html.escape(finding.impact)} impact</span><span class="category">{html.escape(finding.category)}</span><span class="confidence">{html.escape(finding.confidence)} confidence</span></div>
+  <h3>{index}. {html.escape(finding.title)}</h3>
+  <p class="url">{html.escape(redact_url(finding.url))}</p>
+  <div class="detail"><strong>Evidence</strong><p>{html.escape(finding.evidence)}</p></div>
+  <div class="detail"><strong>Why it may matter</strong><p>{html.escape(finding.business_rationale)}</p></div>
+  <div class="detail action"><strong>Recommended action</strong><p>{html.escape(finding.recommendation)}</p></div>
+  <div class="detail"><strong>How to verify</strong><p>{html.escape(finding.verification)}</p></div>
+</article>""")
+    if not cards:
+        cards.append('<p class="empty">No findings were generated from the checks that ran. This does not prove the site is issue-free.</p>')
+    page_rows = []
+    for page in result.pages:
+        status = str(page.status_code) if page.status_code is not None else "Not fetched"
+        page_rows.append(f"<tr><td>{html.escape(redact_url(page.url))}</td><td>{html.escape(status)}</td><td>{html.escape(page.title)}</td><td>{html.escape(page.error)}</td></tr>")
+    notes = "".join(f"<li>{html.escape(_redact_text(note))}</li>" for note in result.notes) or "<li>No additional notes.</li>"
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Website Audit — {html.escape(redact_url(result.target_url))}</title>
+<style>
+:root{{--ink:#171717;--muted:#686868;--paper:#f6f4ef;--line:#e4e0d8;--card:#fff;--orange:#c75b32;--green:#26694d;--red:#a63d37;--amber:#98621a}}
+*{{box-sizing:border-box}}body{{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}}
+.wrap{{max-width:960px;margin:0 auto;padding:44px 24px 64px}}header.hero{{border-bottom:1px solid var(--line);padding-bottom:28px}}.eyebrow{{font-size:11px;letter-spacing:.16em;font-weight:800;color:var(--orange);text-transform:uppercase}}h1{{font-size:clamp(32px,5vw,52px);line-height:1.05;letter-spacing:-.04em;margin:12px 0}}.target{{color:var(--muted);overflow-wrap:anywhere}}.meta{{color:var(--muted);font-size:13px;margin-top:12px}}
+.stats{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0 34px}}.stat,.finding,.panel{{background:var(--card);border:1px solid var(--line);border-radius:16px}}.stat{{padding:17px}}.stat b{{display:block;font-size:30px;line-height:1.2}}.stat span{{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}}
+h2{{font-size:23px;letter-spacing:-.02em;margin:34px 0 14px}}.finding{{padding:22px;margin:14px 0}}.finding-top{{display:flex;gap:8px;align-items:center;flex-wrap:wrap}}.pill{{border-radius:99px;padding:4px 10px;font-size:12px;font-weight:750}}.pill.high{{background:#fce9e7;color:var(--red)}}.pill.medium{{background:#fff1d7;color:var(--amber)}}.pill.low{{background:#e9f3ed;color:var(--green)}}.category,.confidence{{font-size:12px;color:var(--muted)}}h3{{font-size:19px;margin:14px 0 4px}}.url{{font:12px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--muted);overflow-wrap:anywhere;margin:0 0 16px}}.detail{{border-top:1px solid #f0eee9;padding:10px 0}}.detail strong{{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}}.detail p{{margin:3px 0 0}}.action{{border-left:3px solid var(--orange);padding-left:12px}}
+.panel{{padding:18px;overflow-x:auto}}table{{border-collapse:collapse;width:100%;font-size:13px}}td,th{{text-align:left;padding:10px;border-bottom:1px solid var(--line);vertical-align:top}}td{{overflow-wrap:anywhere}}th{{color:var(--muted)}}.notes{{padding-left:20px;color:var(--muted)}}.footnote{{border-top:1px solid var(--line);margin-top:36px;padding-top:18px;color:var(--muted);font-size:12px}}.empty{{padding:24px;background:var(--card);border:1px solid var(--line);border-radius:14px;color:var(--muted)}}
+@media(max-width:600px){{.wrap{{padding:28px 15px 48px}}.stats{{gap:7px}}.stat{{padding:12px}}.stat b{{font-size:24px}}.finding{{padding:16px}}}}
+@media print{{body{{background:#fff}}.wrap{{padding:0;max-width:none}}.finding,.stat,.panel{{break-inside:avoid;box-shadow:none}}}}
+</style></head>
+<body><main class="wrap"><header class="hero"><div class="eyebrow">Website Revenue Leak Auditor</div><h1>Website audit report</h1><div class="target">{html.escape(redact_url(result.target_url))}</div><div class="meta">Started {html.escape(result.started_at)} · {len(result.pages)} page(s) inspected</div></header>
+<section class="stats"><div class="stat"><b>{counts['high']}</b><span>High priority</span></div><div class="stat"><b>{counts['medium']}</b><span>Medium priority</span></div><div class="stat"><b>{counts['low']}</b><span>Low priority</span></div></section>
+<h2>Prioritised findings</h2>{''.join(cards)}
+<h2>Pages inspected</h2><div class="panel"><table><thead><tr><th>URL</th><th>HTTP</th><th>Title</th><th>Note</th></tr></thead><tbody>{''.join(page_rows)}</tbody></table></div>
+<h2>Audit notes</h2><ul class="notes">{notes}</ul>
+<footer class="footnote">Impact labels are review heuristics, not measured revenue loss or guaranteed conversion gains. Static HTML review only; no full browser, accessibility, or performance audit was performed. Review findings manually before taking action.<br>Generated by Website Revenue Leak Auditor · <a href="https://github.com/yerageracharan/website-revenue-leak-auditor">Source repository</a></footer></main></body></html>"""
+
+
+def write_reports(result: AuditResult, markdown_path: str, json_path: str | None = None, html_path: str | None = None) -> None:
     md_path = Path(markdown_path)
     md_path.parent.mkdir(parents=True, exist_ok=True)
     md_path.write_text(render_markdown(result), encoding="utf-8")
@@ -86,3 +131,7 @@ def write_reports(result: AuditResult, markdown_path: str, json_path: str | None
             finding["url"] = redact_url(finding["url"])
         payload["notes"] = [_redact_text(note) for note in payload["notes"]]
         json_file.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    if html_path:
+        html_file = Path(html_path)
+        html_file.parent.mkdir(parents=True, exist_ok=True)
+        html_file.write_text(render_html(result), encoding="utf-8")
