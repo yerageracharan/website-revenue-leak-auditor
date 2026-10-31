@@ -155,3 +155,17 @@ def test_same_host_redirect_is_followed_and_external_redirect_is_blocked(monkeyp
     with httpx.Client(transport=httpx.MockTransport(external_redirect), follow_redirects=False) as client:
         with pytest.raises(UnsafeTarget, match="Cross-host"):
             _fetch_html(client, "https://example.com/start", "example.com")
+
+
+def test_report_redacts_sensitive_query_values_and_creates_folders(tmp_path):
+    import json
+    from revenue_leak_auditor.report import write_reports
+
+    result = AuditResult(target_url="https://example.com/?access_token=secret-value&q=hello")
+    result.pages.append(PageResult("https://example.com/page?api_key=hidden", 200, "text/html", "Page"))
+    md_path = tmp_path / "nested" / "audit.md"
+    json_path = tmp_path / "nested" / "audit.json"
+    write_reports(result, str(md_path), str(json_path))
+    assert "secret-value" not in md_path.read_text(encoding="utf-8")
+    assert "hidden" not in json_path.read_text(encoding="utf-8")
+    assert "%5BREDACTED%5D" in json.loads(json_path.read_text(encoding="utf-8"))["target_url"]
