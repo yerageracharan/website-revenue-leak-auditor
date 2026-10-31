@@ -15,7 +15,10 @@ MAX_RESPONSE_BYTES = 2_000_000
 
 
 def _same_host(url: str, host: str) -> bool:
-    return (urlsplit(url).hostname or "").lower().rstrip(".") == host.lower().rstrip(".")
+    try:
+        return (urlsplit(url).hostname or "").lower().rstrip(".") == host.lower().rstrip(".")
+    except ValueError:
+        return False
 
 
 def _fetch_html(client: httpx.Client, start_url: str, host: str) -> tuple[int, str, str, str]:
