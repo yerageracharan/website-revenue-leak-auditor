@@ -11,7 +11,7 @@
 
 **A website can get visitors and still lose the next click. This agent looks for the friction.**
 
-[Quick start](#-your-first-audit--the-5-minute-origin-story) · [What it checks](#-case-file-01--what-the-auditor-can-actually-see) · [Example report](#-case-file-03--inside-the-audit-report) · [Roadmap](#-next-chapters)
+[Quick start](#quick-start) · [What it checks](#what-it-checks) · [Example report](#example-report) · [Roadmap](#next-chapters)
 
 </div>
 
@@ -38,7 +38,7 @@ It is built for developers, freelancers, agencies, and business owners who want 
 
 </div>
 
-## ⚡ CASE FILE 01 — WHAT THE AUDITOR CAN ACTUALLY SEE
+<a id="what-it-checks"></a>\n\n## ⚡ CASE FILE 01 — WHAT THE AUDITOR CAN ACTUALLY SEE
 
 | Investigation | What the current MVP checks | Why it can matter |
 |---|---|---|
@@ -80,7 +80,7 @@ Every finding carries the **page URL, evidence, impact priority, confidence, rec
 
 No LLM is required to produce the current findings. The facts come from the inspected responses and parsed HTML.
 
-## 🗂️ CASE FILE 03 — INSIDE THE AUDIT REPORT
+<a id="example-report"></a>\n\n## 🗂️ CASE FILE 03 — INSIDE THE AUDIT REPORT
 
 <div align="center">
 <img src="docs/assets/report-preview.svg" alt="Synthetic illustrative preview of the HTML audit report, showing evidence-backed findings and priority labels" width="100%"/>
@@ -99,7 +99,7 @@ The HTML report uses no external JavaScript or CSS. Likely sensitive query value
 
 **Example report:** [Open the synthetic sample finding](examples/sample-audit-report.md).
 
-## 🚀 YOUR FIRST AUDIT — THE 5-MINUTE ORIGIN STORY
+<a id="quick-start"></a>\n\n## 🚀 YOUR FIRST AUDIT — THE 5-MINUTE ORIGIN STORY
 
 <blockquote>
   <strong>Before you begin:</strong> Python 3.10+ is required. Only audit a website you own or have permission to assess. Use your own public website in place of the example URL.
@@ -149,6 +149,8 @@ By default, the auditor inspects up to **5 pages**, uses a **10-second per-reque
 
 ### Step 5 — Export all three report formats
 
+**macOS / Linux / Git Bash**
+
 ```bash
 revenue-auditor https://your-domain.com \
   --max-pages 8 \
@@ -156,6 +158,12 @@ revenue-auditor https://your-domain.com \
   --output reports/audit.md \
   --json reports/audit.json \
   --html reports/audit.html
+```
+
+**Windows PowerShell**
+
+```powershell
+revenue-auditor https://your-domain.com --max-pages 8 --timeout 10 --output reports/audit.md --json reports/audit.json --html reports/audit.html
 ```
 
 The `reports/` directory is created automatically when needed.
@@ -273,7 +281,7 @@ This tool makes network requests using a URL supplied by the user. Treat it as a
 
 Read the full [security model](docs/SECURITY.md) before adapting the crawler for a hosted service.
 
-## 🧭 NEXT CHAPTERS — THE ROADMAP
+<a id="next-chapters"></a>\n\n## 🧭 NEXT CHAPTERS — THE ROADMAP
 
 - [x] Installable Python CLI.
 - [x] Bounded same-host HTML crawl.
