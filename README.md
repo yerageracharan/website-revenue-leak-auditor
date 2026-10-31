@@ -125,6 +125,7 @@ Tests use mocked DNS and HTTP responses. They do not crawl live websites and do 
 - It accepts HTTP(S), limits ports to their standard defaults, rejects embedded credentials and non-public DNS/IP answers, manually validates redirects, restricts crawl scope to the original hostname, limits crawl depth/page count, and caps HTML bodies at 2 MB.
 - The DNS check and the HTTP client's later hostname resolution are separate operations. **DNS-rebinding/TOCTOU is not fully eliminated.** This CLI is intended for a trusted, local, single-user workflow. Do not expose it as a public or multi-tenant URL-scanning service without connection-level DNS pinning, network egress isolation, and additional abuse controls.
 - Static HTML checks do not execute JavaScript. A site that renders content client-side may be only partially inspected.
+- Likely sensitive query parameters (such as token, key, password, auth, and session values) are redacted in generated Markdown and JSON reports. Avoid supplying secrets in URLs regardless.
 - Impact is a prioritisation heuristic, not measured revenue loss. The auditor has no access to analytics, transactions, or conversion attribution.
 - The crawler is intentionally small and bounded. It is not a substitute for Lighthouse, WCAG conformance testing, penetration testing, or a human UX review.
 
