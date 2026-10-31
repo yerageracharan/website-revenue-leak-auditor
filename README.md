@@ -1,3 +1,5 @@
+<a id="website-revenue-leak-auditor"></a>
+
 <div align="center">
 
 # WEBSITE REVENUE LEAK AUDITOR
@@ -61,6 +63,8 @@ The goal is not to produce a dramatic score. The goal is to give a developer or 
 **“What did the tool actually observe, where did it observe it, and what should a person check next?”**
 
 ---
+
+<a id="start-here"></a>
 
 # 1. Start here
 
@@ -159,7 +163,7 @@ You need to activate the virtual environment in the terminal where you will inst
 **Windows PowerShell**
 
 ~~~powershell
-.\\.venv\\Scripts\\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 ~~~
 
 If PowerShell blocks the activation script, you can use Command Prompt instead:
@@ -259,7 +263,7 @@ The tool creates the reports folder automatically if it does not exist.
 **Windows PowerShell**
 
 ~~~powershell
-Start-Process .\\reports\\audit.html
+Start-Process .\reports\audit.html
 ~~~
 
 **macOS**
@@ -277,6 +281,8 @@ xdg-open reports/audit.html
 You now have a complete first-pass static HTML audit.
 
 ---
+
+<a id="what-it-checks"></a>
 
 # 3. What the auditor checks
 
@@ -490,6 +496,8 @@ The repository includes a longer [sample audit finding](examples/sample-audit-re
 
 ---
 
+<a id="understanding-the-report"></a>
+
 # 5. Understanding the report
 
 The auditor can write three different report formats.
@@ -546,6 +554,8 @@ The report writer redacts query values for common sensitive parameter names, inc
 This is a best-effort safeguard. It does not guarantee the detection of every secret. Do not include credentials or private tokens in URLs.
 
 ---
+
+<a id="how-the-audit-works"></a>
 
 # 6. How the audit works
 
@@ -697,6 +707,8 @@ A typical successful run prints:
 The actual page and finding counts depend on the inspected website. The README does not publish a fixed audit score or promise that every website will produce the same output.
 
 ---
+
+<a id="project-structure"></a>
 
 # 8. Project structure and code map
 
@@ -872,6 +884,8 @@ Workflow file: .github/workflows/tests.yml.
 
 ---
 
+<a id="security"></a>
+
 # 10. Security and responsible use
 
 The auditor makes network requests based on a user-supplied URL. This is an SSRF-sensitive design area and should be treated carefully.
@@ -971,7 +985,7 @@ Use the Command Prompt activation script instead:
 You can also run Python through the virtual environment directly without activation:
 
 ~~~powershell
-.\\.venv\\Scripts\\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 ~~~
 
 ## The URL is rejected
