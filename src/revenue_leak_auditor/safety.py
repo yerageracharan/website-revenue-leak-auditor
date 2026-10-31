@@ -42,7 +42,11 @@ def validate_public_url(raw_url: str) -> str:
     if hostname == "localhost" or hostname.endswith(".localhost") or hostname.endswith(".local"):
         raise UnsafeTarget("Local hostnames are not allowed")
     allowed_port = 80 if scheme == "http" else 443
-    if parts.port not in (None, allowed_port):
+    try:
+        port = parts.port
+    except ValueError as exc:
+        raise UnsafeTarget("URL contains an invalid port") from exc
+    if port not in (None, allowed_port):
         raise UnsafeTarget("Only the standard port for the selected HTTP scheme is allowed")
 
     try:
@@ -59,6 +63,6 @@ def validate_public_url(raw_url: str) -> str:
             raise UnsafeTarget(f"Host resolves to a non-public address ({address})")
 
     netloc = f"[{hostname}]" if ":" in hostname else hostname
-    if parts.port:
-        netloc = f"{netloc}:{parts.port}"
+    if port:
+        netloc = f"{netloc}:{port}"
     return urlunsplit((scheme, netloc, parts.path or "/", parts.query, ""))
