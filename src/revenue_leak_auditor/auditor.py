@@ -85,7 +85,11 @@ def audit_website(target_url: str, max_pages: int = 5, timeout: float = 10.0) ->
                         candidate = urljoin(final_url, href)
                         if not _same_host(candidate, host):
                             continue
-                        safe_candidate = validate_public_url(candidate)
+                        try:
+                            safe_candidate = validate_public_url(candidate)
+                        except UnsafeTarget:
+                            result.notes.append("Skipped a same-host link that failed URL safety validation.")
+                            continue
                         if safe_candidate not in visited and safe_candidate not in queue and len(visited) + len(queue) < max_pages:
                             queue.append(safe_candidate)
                 elif body:
