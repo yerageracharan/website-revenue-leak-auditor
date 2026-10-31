@@ -13,3 +13,4 @@ build/
 !.env.example
 audit-report.md
 audit-report.json
+audit-report.html
