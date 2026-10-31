@@ -3,322 +3,336 @@
 <img src="docs/assets/manga-hero.svg" alt="Website Revenue Leak Auditor — Agent 4 of 200" width="100%"/>
 
 [![Tests](https://github.com/yerageracharan/website-revenue-leak-auditor/actions/workflows/tests.yml/badge.svg)](https://github.com/yerageracharan/website-revenue-leak-auditor/actions/workflows/tests.yml)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-7c3bd1.svg)](LICENSE)
-[![Build in Public](https://img.shields.io/badge/Build%20in%20Public-Agent%20%2304%2F200-17131d)](https://github.com/yerageracharan)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![MIT License](https://img.shields.io/badge/License-MIT-7c3bd1.svg)](LICENSE)
+[![Agent 4 of 200](https://img.shields.io/badge/Build%20in%20Public-Agent%2004%2F200-17131d)](https://github.com/yerageracharan)
 
-### 200 AI agents. 200 real problems. One build at a time.
+### 200 agents. 200 practical builds. One project at a time.
 
-**A website can get visitors and still lose the next click. This agent looks for the friction.**
+**Find the friction between a website visit and the next customer action.**
 
-[Quick start](#quick-start) · [What it checks](#what-it-checks) · [Example report](#example-report) · [Roadmap](#next-chapters)
+[Get started](#get-started) · [What it checks](#what-it-checks) · [Reports](#reports) · [Project structure](#project-structure) · [Security](#security)
 
 </div>
 
 ---
 
-## ◢ CASE FILE 04 — THE WEBSITE THAT LEAKS
+## The idea
 
-> *The visitor arrives. The page loads. The button is nowhere. The link is broken. The visitor leaves.*
->
-> **The problem might not be traffic. It might be what happens after the click.**
+A business can attract visitors and still make it difficult for them to take the next step.
 
-Website Revenue Leak Auditor is a small, evidence-first Python CLI that inspects a public website's static HTML, records observable problems, and turns them into a prioritised report with practical fixes.
+A page title may be missing. A contact link may lead to a 404. A mobile viewport may not be configured. The primary action may be hard to identify.
 
-It is built for developers, freelancers, agencies, and business owners who want a first-pass website review without pretending that an automated scan can read minds—or calculate lost revenue from a homepage.
+**Website Revenue Leak Auditor** is a small Python command-line tool that inspects a limited number of pages on a public website, records issues it can verify in the HTML or HTTP response, and creates a report with evidence and recommended next steps.
 
-**Current build:** a working static-HTML CLI. It crawls a bounded set of same-host pages and exports Markdown, JSON, and a self-contained HTML report.
+It is **Agent #4 in my 200-agent build-in-public series**.
 
 <div align="center">
-
-| <sub>THE INPUT</sub> | <sub>THE INVESTIGATION</sub> | <sub>THE OUTPUT</sub> |
-|:---:|:---:|:---:|
-| 🌐 A website URL | 🔎 Real HTML + deterministic checks | 📄 Findings + evidence + fixes |
-| *"Look at this site."* | *"What can we verify?"* | *"Here's what to fix first."* |
-
+<table>
+  <tr>
+    <td align="center" width="33%">
+      <img src="docs/assets/panels/hero-character.jpg" alt="Manga-style character artwork" width="125"/>
+      <br/><strong>Investigate</strong>
+      <br/><sub>Inspect the pages</sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/assets/panels/desk-character.jpg" alt="Manga-style character studying at a desk" width="125"/>
+      <br/><strong>Find evidence</strong>
+      <br/><sub>Verify what is observable</sub>
+    </td>
+    <td align="center" width="33%">
+      <img src="docs/assets/panels/ink-eye.jpg" alt="Black-and-white manga eye detail" width="125"/>
+      <br/><strong>Prioritise</strong>
+      <br/><sub>Explain what to fix next</sub>
+    </td>
+  </tr>
+</table>
 </div>
 
-<a id="what-it-checks"></a>\n\n## ⚡ CASE FILE 01 — WHAT THE AUDITOR CAN ACTUALLY SEE
+> **Current status:** working static-HTML CLI MVP. This repository does not yet contain a web dashboard, a browser-rendering engine, Lighthouse integration, or an AI model that autonomously evaluates business performance.
 
-| Investigation | What the current MVP checks | Why it can matter |
+## What it checks
+
+The current version uses deterministic Python checks. It does not need an AI API key.
+
+| Area | Current check | What the finding means |
 |---|---|---|
-| **Page metadata** | Missing or unusually long title, missing meta description, missing canonical link | Search previews and page identity |
-| **Content structure** | No H1 or multiple H1 elements | Page hierarchy and scanability |
-| **Mobile signal** | Missing viewport meta tag | A reason to inspect the page at phone widths |
-| **Image markup** | Images with no `alt` attribute | Screen-reader users may miss image information |
-| **Conversion signal** | Common action words in links and buttons | A low-confidence clue that the next step may be hard to find |
-| **Page availability** | Same-host pages that return HTTP 4xx or 5xx during the crawl | Visitors may reach a page that is unavailable |
+| Page metadata | Missing or unusually long page title; missing meta description; missing canonical link | A metadata observation—not a search-ranking prediction |
+| Content structure | Missing H1 or multiple H1 elements | A page-structure signal |
+| Mobile setup | Missing viewport meta tag | A reason to test the page at real mobile widths |
+| Image markup | Images without an alt attribute | An accessibility-related observation—not an assessment of alt-text quality |
+| Conversion wording | No common CTA wording found in links or buttons | A low-confidence text heuristic; custom and icon-only controls may be missed |
+| Availability | Crawled pages returning HTTP 4xx or 5xx | The response observed at the time of the audit |
 
-Every finding carries the **page URL, evidence, impact priority, confidence, recommendation, and a way to verify the fix**.
+Each finding includes the page where it was observed, the evidence collected by the check, an impact priority, a separate confidence level, a practical recommendation, and a manual way to verify the fix.
 
-<details>
-<summary><strong>What those checks do NOT prove</strong> — open before making a client claim</summary>
+### What it does not claim
 
-- A missing viewport tag is not a full mobile usability test.
-- An image without an `alt` attribute may be decorative; the current check does not judge alt-text quality.
-- The CTA detector searches common words. It can miss icon-only buttons, custom labels, or actions rendered by JavaScript.
-- A returned 404/500 is an observation made at audit time; transient failures can happen.
-- An SEO metadata check does not predict rankings.
-- An impact label is triage guidance—not a financial calculation or a promised conversion lift.
+The current release does not measure revenue loss, conversion rates, search rankings, Core Web Vitals, or Lighthouse scores. It does not execute JavaScript, test every accessibility requirement, or understand all custom user interfaces.
 
-</details>
+An impact label is a way to organise a review. It is **not** a financial estimate.
 
-## 🎬 CASE FILE 02 — THE INVESTIGATION, PANEL BY PANEL
+## Get started
 
-<div align="center">
-<img src="docs/assets/terminal-walkthrough.svg" alt="Illustrative terminal walkthrough showing the repository clone, dependency install, and audit command" width="100%"/>
-<sub><strong>Terminal panel:</strong> the commands use the real CLI interface. The displayed output is an illustrative example, not a live scan.</sub>
-</div>
+### Requirements
 
-### The run, explained
+- Python 3.10 or newer.
+- Git.
+- Permission to inspect the website you provide.
 
-1. **You provide a URL.** The CLI accepts an HTTP or HTTPS URL.
-2. **The safety gate checks the target.** It rejects embedded credentials, non-standard ports, local/private IP destinations, and unsupported schemes.
-3. **The crawler investigates a small area.** It follows same-host HTML links, manually checks redirects, and respects page and response-size limits.
-4. **The check engine reads the markup.** Deterministic Python checks inspect titles, descriptions, canonical links, headings, viewport metadata, image alt attributes, CTA wording, and HTTP statuses.
-5. **The report generator assembles the evidence.** You get a prioritised Markdown report and optional JSON/HTML exports.
+### 1. Clone the repository
 
-No LLM is required to produce the current findings. The facts come from the inspected responses and parsed HTML.
-
-<a id="example-report"></a>\n\n## 🗂️ CASE FILE 03 — INSIDE THE AUDIT REPORT
-
-<div align="center">
-<img src="docs/assets/report-preview.svg" alt="Synthetic illustrative preview of the HTML audit report, showing evidence-backed findings and priority labels" width="100%"/>
-<sub><strong>Report panel:</strong> synthetic example.test data to show the layout. It is not a real website scan, score, or business result.</sub>
-</div>
-
-The CLI can write three formats from the same audit result:
-
-| File | Use it for |
-|---|---|
-| `audit.md` | Read, review, edit, or attach to an issue |
-| `audit.json` | Structured data for another script or future dashboard |
-| `audit.html` | Self-contained, responsive report that can be opened in a browser and printed |
-
-The HTML report uses no external JavaScript or CSS. Likely sensitive query values (for common names such as `token`, `key`, `password`, `auth`, and `session`) are redacted when reports are written. This is best-effort protection, not a substitute for keeping secrets out of URLs.
-
-**Example report:** [Open the synthetic sample finding](examples/sample-audit-report.md).
-
-<a id="quick-start"></a>\n\n## 🚀 YOUR FIRST AUDIT — THE 5-MINUTE ORIGIN STORY
-
-<blockquote>
-  <strong>Before you begin:</strong> Python 3.10+ is required. Only audit a website you own or have permission to assess. Use your own public website in place of the example URL.
-</blockquote>
-
-### Step 1 — Clone the repository
-
-```bash
+~~~bash
 git clone https://github.com/yerageracharan/website-revenue-leak-auditor.git
 cd website-revenue-leak-auditor
-```
+~~~
 
-### Step 2 — Create a virtual environment
+### 2. Create a virtual environment
 
 **Windows PowerShell**
 
-```powershell
+~~~powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
+.\\.venv\\Scripts\\Activate.ps1
+~~~
 
-**macOS / Linux**
+**macOS or Linux**
 
-```bash
+~~~bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
+~~~
 
-### Step 3 — Install the project
+### 3. Install the project
 
-```bash
+~~~bash
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
-```
+~~~
 
-That installs the CLI, runtime dependencies, and development/test dependencies.
+This installs the command-line tool and the development dependencies used by the test suite.
 
-### Step 4 — Run your first audit
+### 4. Run your first audit
 
-Replace `https://your-domain.com` with a public website you are authorised to inspect.
+Replace the example URL with a public website you own or are authorised to assess.
 
-```bash
+~~~bash
 revenue-auditor https://your-domain.com
-```
+~~~
 
-By default, the auditor inspects up to **5 pages**, uses a **10-second per-request timeout**, and writes `audit-report.md` in the current directory.
+By default, the tool inspects up to **5 pages**, uses a **10-second timeout per request**, and writes **audit-report.md** in the current directory.
 
-### Step 5 — Export all three report formats
+### 5. Export Markdown, JSON, and HTML reports
 
-**macOS / Linux / Git Bash**
+**macOS, Linux, or Git Bash**
 
-```bash
+~~~bash
 revenue-auditor https://your-domain.com \
   --max-pages 8 \
   --timeout 10 \
   --output reports/audit.md \
   --json reports/audit.json \
   --html reports/audit.html
-```
+~~~
 
 **Windows PowerShell**
 
-```powershell
+~~~powershell
 revenue-auditor https://your-domain.com --max-pages 8 --timeout 10 --output reports/audit.md --json reports/audit.json --html reports/audit.html
-```
+~~~
 
-The `reports/` directory is created automatically when needed.
+The reports directory is created automatically when it does not already exist.
 
-### Step 6 — Open the result
+### 6. Open the HTML report
 
-- Open `reports/audit.html` in your browser for the visual report.
-- Open `reports/audit.md` for a Markdown version.
-- Use `reports/audit.json` when you want structured findings.
+**Windows PowerShell**
 
-**Windows PowerShell:** `Start-Process .\reports\audit.html`
+~~~powershell
+Start-Process .\\reports\\audit.html
+~~~
 
-**macOS:** `open reports/audit.html`
+**macOS**
 
-**Linux:** `xdg-open reports/audit.html`
+~~~bash
+open reports/audit.html
+~~~
 
-### Step 7 — Run the tests
+**Linux**
 
-```bash
+~~~bash
+xdg-open reports/audit.html
+~~~
+
+### 7. Run the tests
+
+~~~bash
 pytest
-```
+~~~
 
-The test suite uses mocked HTTP and DNS responses; it does not need API keys or crawl live websites.
+The tests use mocked HTTP and DNS responses. They do not need API keys or a live website.
 
-<details>
-<summary><strong>CLI options — the control panel</strong></summary>
+<div align="center">
+<img src="docs/assets/terminal-walkthrough.svg" alt="Command-line setup and audit walkthrough" width="100%"/>
+<sub>Command-line walkthrough. This is a documentation illustration, not a screenshot of a live scan.</sub>
+</div>
 
-| Option | Default | Meaning |
+## Command reference
+
+| Option | Default | Description |
 |---|---:|---|
-| `URL` | Required | Public HTTP(S) target |
-| `--max-pages` | `5` | Pages to inspect; allowed range 1–15 |
-| `--timeout` | `10` | Per-request timeout in seconds; allowed range 2–30 |
-| `--output` | `audit-report.md` | Markdown report destination |
-| `--json` | Off | Optional JSON report destination |
-| `--html` | Off | Optional self-contained HTML report destination |
-| `--version` | — | Print installed CLI version |
-| `--help` | — | Show command help |
+| URL | Required | Public HTTP or HTTPS website to inspect |
+| --max-pages | 5 | Maximum pages to inspect; allowed range is 1–15 |
+| --timeout | 10 | Per-request timeout in seconds; allowed range is 2–30 |
+| --output | audit-report.md | Markdown report destination |
+| --json | Off | Optional JSON report destination |
+| --html | Off | Optional self-contained HTML report destination |
+| --help | — | Show all CLI options |
+| --version | — | Show the installed version |
 
-```bash
+~~~bash
 revenue-auditor --help
 revenue-auditor --version
-```
+~~~
 
-</details>
+## Reports
 
-## 🧠 HOW THE MACHINE THINKS — ARCHITECTURE
+The same audit result can be exported in three formats.
 
-```mermaid
+| Output | Best for |
+|---|---|
+| Markdown | Reading, editing, sharing in GitHub issues, or keeping notes |
+| JSON | Scripts, structured data, and future integrations |
+| HTML | A self-contained report that opens in a browser and can be printed |
+
+<div align="center">
+<img src="docs/assets/report-preview.svg" alt="Illustrative report layout with evidence, findings, and priority labels" width="100%"/>
+<br/>
+<sub><strong>Illustrative report layout.</strong> The example values are synthetic and are not from a real website scan. The current tool does not calculate an overall website score.</sub>
+</div>
+
+A sample finding is available in [examples/sample-audit-report.md](examples/sample-audit-report.md).
+
+Reports redact query values for common sensitive parameter names such as token, key, password, auth, and session. This is best-effort protection, not secret detection. Avoid putting credentials or private tokens in URLs.
+
+## How it works
+
+~~~mermaid
 flowchart TD
-    A["Public website URL"] --> B["URL and public-address validation"]
+    A["Website URL"] --> B["Validate URL and public address"]
     B --> C["Bounded same-host crawler"]
-    C --> D["HTML response and page metadata"]
-    D --> E["BeautifulSoup parser"]
-    E --> F["Deterministic checks"]
-    F --> G["Evidence-backed findings"]
-    G --> H["Priority + confidence + recommendations"]
-    H --> I["Markdown report"]
-    H --> J["JSON report"]
-    H --> K["Self-contained HTML report"]
-```
+    C --> D["Fetch HTML response"]
+    D --> E["Parse HTML with BeautifulSoup"]
+    E --> F["Run deterministic checks"]
+    F --> G["Create evidence-backed findings"]
+    G --> H["Prioritise and recommend"]
+    H --> I["Markdown"]
+    H --> J["JSON"]
+    H --> K["HTML"]
+~~~
 
-### Project structure
+### Technology
 
-```text
+| Technology | Purpose |
+|---|---|
+| Python 3.10+ | Core application and CLI |
+| HTTPX | HTTP requests, timeouts, and redirect handling |
+| BeautifulSoup 4 | HTML parsing |
+| pytest | Unit and mocked integration tests |
+| GitHub Actions | Continuous integration across Python 3.10–3.13 |
+| Claude Code skill | Project-specific development instructions |
+
+There is no LLM dependency in the current MVP. A future AI layer should explain or group verified findings, not invent observations.
+
+## Project structure
+
+~~~text
 website-revenue-leak-auditor/
 ├── .claude/
-│   └── skills/website-revenue-leak-auditor/
-│       └── SKILL.md          # Claude Code skill for this project
-├── .github/workflows/
-│   └── tests.yml             # CI across supported Python versions
+│   └── skills/
+│       └── website-revenue-leak-auditor/
+│           └── SKILL.md       # Claude Code skill
+├── .github/
+│   └── workflows/
+│       └── tests.yml          # CI workflow
 ├── docs/
-│   ├── assets/               # README manga + report visuals
-│   └── SECURITY.md           # Threat model and known limitations
+│   ├── assets/
+│   │   ├── panels/            # Cropped manga artwork
+│   │   ├── manga-hero.svg
+│   │   ├── terminal-walkthrough.svg
+│   │   └── report-preview.svg
+│   └── SECURITY.md            # Security model and limitations
 ├── examples/
 │   └── sample-audit-report.md
-├── src/revenue_leak_auditor/
-│   ├── auditor.py            # Bounded crawler and orchestration
-│   ├── checks.py             # Deterministic HTML checks
-│   ├── cli.py                # Command-line interface
-│   ├── models.py             # Audit, page, and finding data models
-│   ├── report.py             # Markdown, JSON, and HTML exports
-│   └── safety.py             # URL and public-address validation
+├── src/
+│   └── revenue_leak_auditor/
+│       ├── auditor.py         # Crawl and audit orchestration
+│       ├── checks.py          # Deterministic HTML checks
+│       ├── cli.py             # Command-line interface
+│       ├── models.py          # Audit, page, and finding models
+│       ├── report.py          # Markdown, JSON, and HTML exports
+│       └── safety.py          # URL validation
 ├── tests/
-│   └── test_mvp.py           # Offline unit and mocked integration tests
-├── CLAUDE.md                 # Project-wide Claude Code instructions
-├── pyproject.toml            # Package metadata and CLI entry point
+│   └── test_mvp.py            # Offline tests
+├── CLAUDE.md                 # Project-wide Claude Code guidance
+├── pyproject.toml            # Package configuration
 ├── LICENSE
-└── README.md                 # You are here
-```
+└── README.md
+~~~
 
-## 🧰 THE TOOLBELT
+## Security and limitations
 
-| Tool | Job |
-|---|---|
-| **Python 3.10+** | Core application and CLI |
-| **HTTPX** | Bounded HTTP requests and redirect handling |
-| **BeautifulSoup 4** | Static HTML parsing |
-| **pytest** | Automated tests |
-| **GitHub Actions** | CI on Python 3.10, 3.11, 3.12, and 3.13 |
-| **Claude Code skill** | Repository-specific agent workflow and guardrails |
+This tool makes network requests to a URL supplied by the user. Treat it as an SSRF-sensitive application.
 
-There is **no LLM API dependency** in the current MVP. That is deliberate: an AI explanation layer should be added only after the underlying evidence and checks are dependable.
+- Only HTTP and HTTPS URLs are accepted.
+- Embedded URL credentials and non-standard ports are rejected.
+- DNS answers are checked for public IP addresses before a request.
+- Redirects are followed manually and must remain on the original hostname.
+- The crawler is limited to the original hostname, a maximum of 15 pages, and 2 MB per HTML response.
+- Requests are read-only GET requests. The tool does not log in, submit forms, purchase, book, send messages, or modify a website.
+- Website JavaScript is not executed and arbitrary files are not downloaded.
 
-## ⚠️ THE SAFETY SCROLL — PLEASE READ
+**Important DNS limitation:** DNS is checked before HTTPX connects, but HTTPX performs its own hostname resolution when opening the connection. This leaves a DNS-rebinding / time-of-check-to-time-of-use gap. This version is intended for trusted, local, single-user use. Do not expose it as a public multi-tenant URL scanner without connection-level DNS pinning, network isolation, transport-level redirect controls, and abuse protection.
 
-This tool makes network requests using a URL supplied by the user. Treat it as an SSRF-sensitive application.
+Read the full [security model](docs/SECURITY.md) before adapting the crawler for hosted use.
 
-- Run it only against sites you own or are authorised to assess.
-- It accepts HTTP(S), uses standard ports, checks DNS answers for public IPs, restricts the crawl to the original hostname, and manually validates redirects.
-- It performs read-only GET requests. It does not log in, submit forms, book, purchase, message, or modify a website.
-- It caps the crawl at 15 pages and each HTML response at 2 MB.
-- It does not execute website JavaScript or download arbitrary files.
-- **Important limitation:** DNS is checked before HTTPX connects, but the connection resolves the hostname separately. This leaves a DNS-rebinding / time-of-check-to-time-of-use gap. This build is for trusted, local, single-user use. Do not expose it as a public multi-tenant URL scanner without connection-level DNS pinning, network isolation, redirect controls at the transport layer, and abuse protection.
-- Static HTML results are not a Lighthouse, Core Web Vitals, WCAG, penetration-test, or full UX report.
-
-Read the full [security model](docs/SECURITY.md) before adapting the crawler for a hosted service.
-
-<a id="next-chapters"></a>\n\n## 🧭 NEXT CHAPTERS — THE ROADMAP
+## Roadmap
 
 - [x] Installable Python CLI.
 - [x] Bounded same-host HTML crawl.
-- [x] Static SEO, structure, mobile-signal, image-alt, CTA-heuristic, and HTTP status checks.
-- [x] Evidence-backed findings with impact and confidence separated.
-- [x] Markdown, JSON, and self-contained HTML exports.
+- [x] Static metadata, H1, viewport, image-alt, CTA-heuristic, and HTTP status checks.
+- [x] Findings with evidence, impact, confidence, and recommendations.
+- [x] Markdown, JSON, and HTML report exports.
 - [x] Offline tests and GitHub Actions CI.
-- [ ] More detailed internal-link and broken-asset checks.
+- [ ] Richer internal-link and broken-asset checks.
 - [ ] Browser-rendered checks for JavaScript-heavy pages.
-- [ ] Lighthouse/PageSpeed integration with clearly labelled lab/field metrics.
+- [ ] Lighthouse or PageSpeed integration with clearly labelled lab and field metrics.
 - [ ] Optional AI explanations grounded only in verified findings.
 - [ ] Connection-level DNS pinning and isolated workers before hosted scanning.
 
-## 🎯 WHO IS THIS FOR?
+## Who is it for?
 
-- **Freelancers and web studios:** create a first-pass checklist before a redesign conversation.
+- **Freelancers and web studios:** prepare a first-pass review before a redesign conversation.
 - **Small businesses:** understand visible website issues and what to investigate next.
 - **Developers:** run repeatable static checks and export structured findings.
-- **Students and builders:** learn how crawling, parsing, deterministic checks, and report generation fit together.
+- **Students and builders:** learn how crawling, parsing, deterministic checks, and reporting fit together.
 
-Treat the report as a starting point for a human review—not as proof of lost customers or guaranteed growth.
+Treat an audit as a starting point for human review—not proof of lost customers or guaranteed growth.
 
-## 🧑‍🎨 BUILD IN PUBLIC — AGENT #04 / 200
+## Build in public — Agent #4 of 200
 
-This repository is part of a public challenge to build **200 practical AI agents and automation projects**. The rule for this series is simple:
+This repository is part of a public challenge to build **200 practical AI agents and automation projects**.
 
 **Build something real. Show the evidence. Document the limitations. Ship the next version.**
 
-- ⭐ [Star the repository](https://github.com/yerageracharan/website-revenue-leak-auditor)
-- 🐛 [Report an issue](https://github.com/yerageracharan/website-revenue-leak-auditor/issues)
-- 🔀 [Fork the project](https://github.com/yerageracharan/website-revenue-leak-auditor/fork)
+- [Star the repository](https://github.com/yerageracharan/website-revenue-leak-auditor)
+- [Report an issue](https://github.com/yerageracharan/website-revenue-leak-auditor/issues)
+- [Fork the project](https://github.com/yerageracharan/website-revenue-leak-auditor/fork)
 
-Found a bug or a useful check to add? Open an issue with the URL pattern, expected behavior, and a reproducible example. Do not post private URLs, credentials, or customer data.
+When reporting an issue, include the expected behavior and a reproducible example. Do not post private URLs, credentials, or customer data.
 
-## 📜 LICENSE
+## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
 
 ---
 
@@ -326,8 +340,8 @@ MIT — see [LICENSE](LICENSE).
 
 **END OF CHAPTER 04**
 
-*Next scan. Better evidence. Fewer blind spots.*
+*Better evidence. Clearer fixes. Fewer blind spots.*
 
-[⬆ Back to the top](#website-revenue-leak-auditor)
+[Back to top](#website-revenue-leak-auditor)
 
 </div>
