@@ -886,6 +886,417 @@ Workflow file: .github/workflows/tests.yml.
 
 <a id="security"></a>
 
+## 9.1 What happens after you press Enter?
+
+The command-line tool follows a defined path. Understanding this makes it easier to interpret partial audits and debug unexpected output.
+
+~~~mermaid
+flowchart TD
+    A["CLI receives arguments"] --> B["Check page and timeout limits"]
+    B --> C["Validate the starting URL"]
+    C -->|Allowed| D["Record original hostname"]
+    C -->|Rejected| X["Stop and show an input error"]
+    D --> E["Create page queue"]
+    E --> F["Fetch next queued page"]
+    F --> G["Validate URL and redirect target"]
+    G --> H["Read response headers and body"]
+    H --> I{"HTML response?"}
+    I -->|Yes| J["Parse title, metadata, headings, images and links"]
+    I -->|No| K["Save a not-inspected note"]
+    J --> L["Append verified findings"]
+    K --> M["Save page result"]
+    L --> M
+    M --> N{"Page limit reached or queue empty?"}
+    N -->|No| F
+    N -->|Yes| O["Create final AuditResult"]
+    O --> P["Write requested report files"]
+~~~
+
+### A closer look at each stage
+
+| Stage | Module | Work performed | Possible result |
+|---|---|---|---|
+| 1. Parse input | cli.py | Reads URL and command-line options | Valid arguments or an input error |
+| 2. Check limits | auditor.py | Ensures page limit and timeout are within supported ranges | Audit proceeds or stops |
+| 3. Validate URL | safety.py | Checks protocol, hostname, credentials, port, and DNS answers | Normalised URL or UnsafeTarget |
+| 4. Start crawl | auditor.py | Creates a queue and a visited set | First page is ready |
+| 5. Fetch page | auditor.py | Makes a GET request and handles redirects manually | Status, content type, final URL, and response body |
+| 6. Parse HTML | checks.py | Uses BeautifulSoup to inspect static markup | Title, findings, and link candidates |
+| 7. Discover pages | auditor.py | Adds allowed same-host links while respecting the page limit | More pages enter the queue |
+| 8. Build result | models.py | Collects pages, findings, and notes | One structured AuditResult |
+| 9. Export reports | report.py | Renders requested report formats | Markdown, JSON, and/or HTML files |
+
+## 9.2 How the crawler decides what to visit
+
+The crawler is intentionally small. It is not designed to map an entire domain.
+
+~~~mermaid
+flowchart TD
+    A["Read an href from inspected HTML"] --> B["Resolve relative URL"]
+    B --> C{"Same original hostname?"}
+    C -->|No| D["Skip external host"]
+    C -->|Yes| E["Run URL safety validation"]
+    E -->|Rejected| F["Add a skip note"]
+    E -->|Allowed| G{"Already visited or queued?"}
+    G -->|Yes| H["Do not add it again"]
+    G -->|No| I{"Would page limit be exceeded?"}
+    I -->|Yes| J["Leave it out and respect the limit"]
+    I -->|No| K["Add URL to page queue"]
+~~~
+
+### What counts as a discovered page?
+
+A page candidate is extracted from an ordinary HTML anchor that has an href attribute. Relative links are resolved against the page URL. The candidate must remain on the original hostname and pass URL safety validation.
+
+The crawler does not currently:
+
+- Discover every URL in a sitemap.
+- Follow links to a different hostname.
+- Execute JavaScript to reveal client-rendered links.
+- Discover links hidden behind authentication.
+- Exhaustively crawl every route on the domain.
+- Check every image, stylesheet, script, document, or external asset URL.
+
+### Crawl example
+
+Imagine a site whose homepage contains these links:
+
+~~~text
+https://shop.example.test/
+├── /about
+├── /contact
+├── /products
+├── https://social.example.net/brand
+└── /account
+~~~
+
+The crawler considers same-host links for its bounded queue. The external social profile is outside the original host scope. If the page limit is reached before every candidate is processed, the report records that the crawl limit was reached.
+
+This is an illustration of the scope rule, not a real audit result.
+
+## 9.3 How the response is handled
+
+After a page is fetched, the response is treated according to its status and content type.
+
+| Response situation | Current behavior |
+|---|---|
+| HTML response below HTTP 400 | Parse the HTML and run checks |
+| HTTP 4xx | Record an availability finding |
+| HTTP 5xx | Record an availability finding |
+| Non-HTML content type | Save a note; skip HTML checks |
+| HTML response larger than 2 MB | Stop reading that body and save a note |
+| Redirect with a Location header | Validate and follow manually, within the redirect limit |
+| Redirect to a different hostname | Reject the redirect |
+| Missing redirect Location | Save a response note |
+| Request or decoding error | Record a page error and continue the bounded audit where possible |
+
+A page that could not be inspected is not silently treated as a clean page. The result contains page-level error information and audit notes.
+
+## 9.4 Priority is a review order, not a score
+
+The current application stores each finding's impact and confidence as separate labels.
+
+~~~text
+             FINDING REVIEW CARD
+┌─────────────────────────────────────────────┐
+│ TITLE       Page returned HTTP 404          │
+│ CATEGORY    Availability                    │
+│ PAGE        https://example.test/contact    │
+│                                             │
+│ IMPACT      Medium                          │
+│ CONFIDENCE  High                            │
+│                                             │
+│ EVIDENCE    HTTP status 404                 │
+│ ACTION      Restore page or fix the link    │
+│ VERIFY      Request this URL again          │
+└─────────────────────────────────────────────┘
+~~~
+
+The example above is illustrative. It demonstrates how the report fields fit together; it is not a finding against a live site.
+
+### How to use the labels
+
+| Label | How to interpret it |
+|---|---|
+| High impact | Review early because the issue may block an important page or visitor task |
+| Medium impact | Review because it may create meaningful friction |
+| Low impact | Review as a lower-priority metadata or structure improvement |
+| High confidence | The observation follows directly from collected evidence |
+| Medium confidence | The evidence is useful, but interpretation requires context |
+| Low confidence | The result is heuristic and should be treated as a question for a human |
+
+A High-confidence issue is not automatically a High-impact issue. A Low-confidence conversion heuristic should not be sold as a proven problem.
+
+## 9.5 The finding data contract
+
+Every finding is represented by the Finding model. The same structured object is used by the report renderers.
+
+~~~json
+{
+  "title": "Viewport configuration is missing",
+  "category": "Mobile usability",
+  "url": "https://example.test/",
+  "evidence": "No meta viewport tag was found.",
+  "impact": "Medium",
+  "confidence": "High",
+  "recommendation": "Add a responsive viewport declaration.",
+  "verification": "Inspect the page at common mobile widths.",
+  "business_rationale": "The page may be poorly scaled on mobile devices."
+}
+~~~
+
+This JSON object is synthetic documentation data. It shows the field names and the general shape of a finding; it is not copied from a real business audit.
+
+### Why this structure matters
+
+The finding model separates four different things:
+
+1. **Observation:** what the tool detected.
+2. **Evidence:** the data that supports the observation.
+3. **Interpretation:** why the observation may matter.
+4. **Action:** what a person can do and how they can verify the change.
+
+That separation is important. It prevents a recommendation from being mistaken for evidence and helps future integrations consume the findings consistently.
+
+## 9.6 Report data structure
+
+~~~mermaid
+classDiagram
+    class AuditResult {
+      target_url
+      started_at
+      pages
+      findings
+      notes
+      summary
+    }
+    class PageResult {
+      url
+      status_code
+      content_type
+      title
+      error
+    }
+    class Finding {
+      title
+      category
+      url
+      evidence
+      impact
+      confidence
+      recommendation
+      verification
+      business_rationale
+    }
+    AuditResult "1" o-- "0..*" PageResult
+    AuditResult "1" o-- "0..*" Finding
+~~~
+
+The JSON report serialises this structure. Markdown and HTML render the same information in formats designed for people.
+
+## 9.7 A realistic workflow for a small business website
+
+The following is a suggested human workflow, not a promise that the tool automatically evaluates every item.
+
+~~~mermaid
+flowchart TD
+    A["Choose a site you are allowed to inspect"] --> B["Run a bounded audit"]
+    B --> C["Open the HTML report"]
+    C --> D["Read the evidence for each finding"]
+    D --> E{"Can you reproduce the observation?"}
+    E -->|No| F["Mark for investigation or dismiss"]
+    E -->|Yes| G["Decide whether the issue matters to a visitor"]
+    G --> H["Prioritise a practical change"]
+    H --> I["Make the change in the website"]
+    I --> J["Run the relevant check again"]
+    J --> K["Manually verify the visitor experience"]
+~~~
+
+For example, a missing viewport tag may be worth correcting, but the actual mobile layout still needs to be inspected. A 404 may be important if it affects a customer-facing page, but less important if it is an obsolete URL that is no longer linked.
+
+The auditor provides observations. A developer or site owner decides what action is appropriate.
+
+## 9.8 What is deliberately outside the current audit
+
+| Topic | Why it is not reported as a current result |
+|---|---|
+| Actual page-load speed | No browser performance measurement is performed |
+| Largest Contentful Paint | Requires a real measurement tool and a documented method |
+| Interaction to Next Paint | Requires browser/user interaction measurement |
+| Cumulative Layout Shift | Requires layout-shift measurement |
+| Search ranking | Cannot be inferred from page metadata alone |
+| Conversion rate | Requires analytics or transaction data |
+| Revenue loss | Requires business data and a defensible attribution method |
+| Full accessibility conformance | Requires broader testing than checking image alt attributes |
+| Visual design quality | Static HTML parsing does not evaluate visual composition |
+| Security vulnerability status | This is not a penetration-testing tool |
+
+Do not turn an item in this table into a claim in a sales proposal. It is a possible future capability or a separate human review task.
+
+## 9.9 Before-and-after verification checklist
+
+After making a website change, verify the exact issue instead of relying only on a second summary.
+
+| Finding | Before | After |
+|---|---|---|
+| Missing title | No title element detected | Confirm the intended title is present in the HTML head |
+| Missing description | No non-empty description detected | Confirm the new description is present and relevant |
+| Missing canonical | No canonical href detected | Confirm the canonical URL is correct for that page |
+| Missing H1 | No H1 detected | Confirm the intended primary heading exists |
+| Multiple H1s | More than one H1 detected | Review the page outline and correct the hierarchy if appropriate |
+| Missing viewport | No viewport meta tag detected | Confirm the viewport declaration and manually test mobile widths |
+| Missing alt attribute | One or more img elements lack alt | Decide which images are informative or decorative and add appropriate attributes |
+| HTTP error | Page returned a 4xx or 5xx response | Re-request the exact URL and inspect the final visitor experience |
+| No CTA wording detected | Common text terms were not found | Ask a person to locate the primary action; do not rely only on the heuristic |
+
+---
+
+## 10.1 How to add a new deterministic check
+
+A good new check should be small, evidence-based, and easy to test.
+
+### Step 1 — Choose one observable condition
+
+Good examples:
+
+- A specific metadata element is missing.
+- An image has no alt attribute.
+- The page contains no H1.
+- The title exceeds a defined character threshold.
+
+Avoid vague checks such as "the website looks unprofessional" unless a reproducible measurement is defined.
+
+### Step 2 — Decide what evidence proves the condition
+
+Before writing code, define:
+
+- What HTML element or response value is being inspected?
+- What exact condition triggers a finding?
+- What evidence string will be stored?
+- What can the tool not infer?
+
+### Step 3 — Add a Finding object in checks.py
+
+The following is a pattern for an additional check inside the existing HTML inspection flow. It is an example, not a new feature already added to the project.
+
+~~~python
+if soup.find("meta", attrs={"name": "robots"}) is None:
+    findings.append(
+        Finding(
+            title="Robots meta tag was not detected",
+            category="SEO",
+            url=url,
+            evidence="No meta name='robots' tag was found in the inspected HTML.",
+            impact="Low",
+            confidence="High",
+            recommendation=(
+                "Review whether this page needs an explicit robots directive."
+            ),
+            verification=(
+                "Inspect the page head and confirm the intended indexing directive."
+            ),
+            business_rationale=(
+                "An incorrect indexing directive can affect search visibility."
+            ),
+        )
+    )
+~~~
+
+This example shows the structure of a Finding. Whether a missing robots tag is actually a defect depends on the page and the site's intended behavior; in many cases, no robots meta tag is perfectly normal.
+
+### Step 4 — Add a focused unit test
+
+Use a short synthetic HTML string. The test should check both:
+
+- The condition that should create a finding.
+- A page where the condition should not create a finding.
+
+### Step 5 — Verify the evidence
+
+Check that the finding points to the correct URL and that the evidence describes the exact condition that triggered it.
+
+### Step 6 — Run the full test suite
+
+~~~bash
+pytest
+~~~
+
+### Step 7 — Update documentation
+
+Add the new check to:
+
+- The feature matrix.
+- The limitations section, if it is heuristic.
+- The sample report, if useful.
+- The Claude Code skill, if it changes the engineering workflow.
+
+~~~mermaid
+flowchart LR
+    A["Define observable condition"] --> B["Implement check"]
+    B --> C["Write positive test"]
+    C --> D["Write negative test"]
+    D --> E["Run pytest"]
+    E --> F{"Tests pass?"}
+    F -->|No| B
+    F -->|Yes| G["Update docs"]
+    G --> H["Open pull request"]
+~~~
+
+## 10.2 A useful bug report
+
+A high-quality bug report helps another developer reproduce the problem without needing access to your computer.
+
+~~~text
+Title:
+CTA heuristic misses a visible contact action
+
+Environment:
+Python version:
+Operating system:
+Project version / commit:
+
+Expected:
+The page should be reviewed as having a visible contact action.
+
+Actual:
+The auditor reports that no common CTA wording was detected.
+
+Relevant evidence:
+- Sanitised HTML snippet:
+- Page URL pattern:
+- CLI command:
+- Report output:
+
+Reproduction steps:
+1. Install the project.
+2. Run the command with a permitted test URL or fixture.
+3. Open the resulting report.
+4. Compare the finding with the expected behavior.
+
+Additional notes:
+No credentials, tokens, private URLs, or customer data included.
+~~~
+
+## 10.3 Test design principles
+
+Tests should verify behavior, not simply exercise lines of code.
+
+| Test type | Question it should answer |
+|---|---|
+| Input validation | Is an unsafe or malformed URL rejected? |
+| HTML parsing | Does the check detect the intended markup condition? |
+| Negative case | Does a normal page avoid an incorrect finding? |
+| Crawl scope | Does the crawler remain on the original hostname? |
+| Page limits | Does it stop when the configured bound is reached? |
+| Redirect behavior | Are redirects checked and external redirects rejected? |
+| Response handling | Are errors and non-HTML responses represented clearly? |
+| Report generation | Is the evidence preserved in the output? |
+| Report privacy | Are common sensitive query values redacted? |
+| HTML escaping | Is untrusted content rendered as text rather than executable markup? |
+
+The test suite should remain offline. Unit tests must not depend on a business website being available or returning the same content tomorrow.
+
+
 # 10. Security and responsible use
 
 The auditor makes network requests based on a user-supplied URL. This is an SSRF-sensitive design area and should be treated carefully.
