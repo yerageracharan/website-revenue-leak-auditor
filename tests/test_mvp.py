@@ -172,3 +172,22 @@ def test_report_redacts_sensitive_query_values_and_creates_folders(tmp_path):
     assert "note-secret" not in json_path.read_text(encoding="utf-8")
     assert "note-secret" not in md_path.read_text(encoding="utf-8")
     assert "%5BREDACTED%5D" in json.loads(json_path.read_text(encoding="utf-8"))["target_url"]
+
+
+def test_html_report_is_escaped_redacted_and_self_contained(tmp_path):
+    from revenue_leak_auditor.report import render_html, write_reports
+
+    result = AuditResult(target_url="https://example.com/?api_key=top-secret")
+    result.findings.append(Finding(
+        title="<script>alert('x')</script>", category="SEO", url="https://example.com/?token=secret",
+        evidence="Observed <title> content.", impact="High", confidence="High",
+        recommendation="Fix the title.", verification="Inspect the page.",
+        business_rationale="A visitor may be confused.",
+    ))
+    rendered = render_html(result)
+    assert "<script>alert('x')</script>" not in rendered
+    assert "&lt;script&gt;" in rendered
+    assert "top-secret" not in rendered and "secret</div>" not in rendered
+    html_path = tmp_path / "client" / "audit.html"
+    write_reports(result, str(tmp_path / "client" / "audit.md"), html_path=str(html_path))
+    assert html_path.exists()
