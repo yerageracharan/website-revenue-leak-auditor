@@ -101,3 +101,23 @@ def test_report_includes_evidence_and_limits():
 def test_page_limit_validation():
     with pytest.raises(ValueError, match="max_pages"):
         audit_website("https://example.com", max_pages=0)
+
+ 
+ 
+def test_unsafe_discovered_link_is_skipped_without_duplicate_page(monkeypatch):
+    from revenue_leak_auditor.safety import UnsafeTarget
+
+    def validate(url):
+        if ":8080" in url:
+            raise UnsafeTarget("non-standard port")
+        return url
+
+    monkeypatch.setattr("revenue_leak_auditor.auditor.validate_public_url", validate)
+    html = "<html><head><title>Home</title></head><body><h1>Home</h1><a href='http://example.com:8080/private'>Private port</a></body></html>"
+    monkeypatch.setattr(
+        "revenue_leak_auditor.auditor._fetch_html",
+        lambda _client, url, _host: (200, "text/html", url, html),
+    )
+    result = audit_website("https://example.com", max_pages=3)
+    assert len(result.pages) == 1
+    assert any("Skipped a same-host link" in note for note in result.notes)
