@@ -26,6 +26,10 @@ Do not deploy this version as a hosted service that accepts arbitrary URLs from 
 - A 404/5xx result is an observation at the time of the audit; transient failures are possible.
 - Impact labels are triage guidance, not financial estimates. The tool has no analytics or sales data.
 
+## Report privacy
+
+Markdown, JSON, and HTML reports redact query values for common sensitive parameter names such as `token`, `key`, `secret`, `password`, `auth`, `session`, and `csrf`. This is a best-effort safeguard, not secret detection: custom parameter names and secrets embedded in paths or page content may not be recognised. Avoid putting secrets in audit URLs.
+
 ## Safe operation checklist
 1. Obtain permission before running an audit.
 2. Keep crawl size conservative; do not raise limits to overwhelm a site.
