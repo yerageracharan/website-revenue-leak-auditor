@@ -15,7 +15,7 @@
 
 **A practical, evidence-first website audit CLI.**
 
-[Start here](#start-here) · [Feature guide](#what-the-auditor-checks) · [Architecture](#how-the-audit-works) · [Examples](#understanding-the-report) · [Security](#security-and-responsible-use)
+[Start here](#start-here) · [Feature guide](#what-it-checks) · [Architecture](#how-the-audit-works) · [Examples](#understanding-the-report) · [Security](#security)
 
 </div>
 
