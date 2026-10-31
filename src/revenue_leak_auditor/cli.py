@@ -12,7 +12,7 @@ from .safety import UnsafeTarget
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="revenue-auditor",
-        description="Run a bounded, evidence-first static website audit and save a Markdown report.",
+        description="Run a bounded, evidence-first static website audit and export Markdown, JSON, or HTML reports.",
         epilog="Only audit websites you own or are authorised to assess.",
     )
     parser.add_argument("url", help="Public website URL, for example https://example.com")
