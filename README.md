@@ -1659,6 +1659,13 @@ If you find this useful:
 - [Fork it](https://github.com/yerageracharan/website-revenue-leak-auditor/fork)
 - [Open an issue](https://github.com/yerageracharan/website-revenue-leak-auditor/issues)
 
+
+## Contributing and project safety
+
+- [Contributing guide](CONTRIBUTING.md) — development setup, tests, and pull-request expectations.
+- [AI coding-agent instructions](AGENTS.md) — repository-specific invariants and verification rules.
+- [Security policy](SECURITY.md) — private vulnerability disclosure and safe handling.
+
 ## License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for the full text.
