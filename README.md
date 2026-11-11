@@ -439,6 +439,11 @@ A finding is a structured observation. It is not just an AI-generated sentence.
 
 ## Anatomy of a finding
 
+![From finding to fix](docs/visuals/02-finding-to-fix.svg)
+
+*Each finding separates the observation, potential impact, recommendation, and verification step.*
+
+
 | Field | What it tells you |
 |---|---|
 | Title | The issue or observation |
