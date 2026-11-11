@@ -1,0 +1,29 @@
+name: Feature request
+description: Propose a bounded website-audit improvement.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Network and privacy implications
+      description: Address authorization, redirects, DNS rebinding, outbound scope, quotas, and report data.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Test fixture and validation plan
+    validations:
+      required: true

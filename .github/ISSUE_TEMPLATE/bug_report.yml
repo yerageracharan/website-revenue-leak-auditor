@@ -1,0 +1,49 @@
+name: Bug report
+description: Report a reproducible audit or safety defect.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Only audit websites you own or are authorized to assess. Remove URL query secrets and private customer information from examples."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide a controlled target or synthetic HTML fixture, exact command, and steps.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and evidence
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - URL validation / DNS safety
+        - Redirect handling / HTTP transport
+        - HTML detector / finding severity
+        - Report generation
+        - CLI / installation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Python version and operating system
