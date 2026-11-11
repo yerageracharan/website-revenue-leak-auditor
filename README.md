@@ -4,6 +4,8 @@
 
 # WEBSITE REVENUE LEAK AUDITOR
 
+**[Documentation map](docs/README.md)** · [Contribution guide](CONTRIBUTING.md) · [Security policy](SECURITY.md)
+
 ### Agent 04 / 200 · Build in Public Series
 
 **Find the friction between a website visit and the next customer action.**
