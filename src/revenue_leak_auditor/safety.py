@@ -29,7 +29,10 @@ def validate_public_url(raw_url: str) -> str:
     if not raw_url or len(raw_url) > 2048:
         raise UnsafeTarget("URL is empty or exceeds 2,048 characters")
 
-    parts = urlsplit(raw_url.strip())
+    try:
+        parts = urlsplit(raw_url.strip())
+    except ValueError as exc:
+        raise UnsafeTarget("URL is malformed") from exc
     scheme = parts.scheme.lower()
     if scheme not in {"http", "https"}:
         raise UnsafeTarget("Only http:// and https:// URLs are allowed")

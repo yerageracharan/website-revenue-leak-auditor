@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import deque
+import math
 from urllib.parse import urljoin, urlsplit
 
 import httpx
@@ -49,10 +50,15 @@ def _fetch_html(client: httpx.Client, start_url: str, host: str) -> tuple[int, s
 
 
 def audit_website(target_url: str, max_pages: int = 5, timeout: float = 10.0) -> AuditResult:
-    if not 1 <= max_pages <= 15:
-        raise ValueError("max_pages must be between 1 and 15")
-    if not 2 <= timeout <= 30:
-        raise ValueError("timeout must be between 2 and 30 seconds")
+    if isinstance(max_pages, bool) or not isinstance(max_pages, int) or not 1 <= max_pages <= 15:
+        raise ValueError("max_pages must be an integer between 1 and 15")
+    if (
+        isinstance(timeout, bool)
+        or not isinstance(timeout, (int, float))
+        or not math.isfinite(timeout)
+        or not 2 <= timeout <= 30
+    ):
+        raise ValueError("timeout must be a finite number between 2 and 30 seconds")
 
     start_url = validate_public_url(target_url)
     host = urlsplit(start_url).hostname or ""

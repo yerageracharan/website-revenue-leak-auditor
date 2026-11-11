@@ -191,3 +191,21 @@ def test_html_report_is_escaped_redacted_and_self_contained(tmp_path):
     html_path = tmp_path / "client" / "audit.html"
     write_reports(result, str(tmp_path / "client" / "audit.md"), html_path=str(html_path))
     assert html_path.exists()
+
+
+@pytest.mark.parametrize("url", ["http://[::1", "https://[2001:db8::1", "http://example.com:99999"])
+def test_rejects_malformed_authority_and_invalid_port(url):
+    with pytest.raises(UnsafeTarget):
+        validate_public_url(url)
+
+
+@pytest.mark.parametrize("max_pages", [True, 1.5, "5"])
+def test_page_limit_requires_an_integer(max_pages):
+    with pytest.raises(ValueError, match="integer between 1 and 15"):
+        audit_website("https://example.com", max_pages=max_pages)
+
+
+@pytest.mark.parametrize("timeout", [True, float("nan"), float("inf"), "10", 1, 31])
+def test_timeout_requires_a_finite_number_in_range(timeout):
+    with pytest.raises(ValueError, match="finite number between 2 and 30"):
+        audit_website("https://example.com", timeout=timeout)
