@@ -564,6 +564,11 @@ This is a best-effort safeguard. It does not guarantee the detection of every se
 
 # 6. How the audit works
 
+![Website audit pipeline](docs/visuals/01-audit-pipeline.svg)
+
+*The audit moves from a public URL to a bounded snapshot, observable checks, and a report.*
+
+
 ## System overview
 
 ~~~mermaid
